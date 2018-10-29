@@ -10,18 +10,6 @@ class BackgroundScript {
     this.settings = settings;
     this.connections = [];
 
-    // Restore persistent state datas from localstorage
-    if (this.settings.persistentStates.length) {
-      this.browser.getPersistentStates().then((savedStates) => {
-        if (savedStates !== null) {
-          this.store.replaceState({
-            ...this.store.state,
-            ...this.filterObject(savedStates, this.settings.persistentStates)
-          });
-        }
-      });
-    }
-
     // Hook mutations
     this.store.subscribe((mutation) => {
       // Send mutation to connections pool
@@ -42,8 +30,20 @@ class BackgroundScript {
       }
 
       // Save persistent states to local storage
-      browser.savePersistentStates(this.filterObject(this.store.state, this.settings.persistentStates));
+      browser.savePersistentStates(this.filterObject(this.store.state, this.settings.persistentStates.map((x) => x.name)));
     });
+
+    // Restore persistent state datas from localstorage
+    if (this.settings.persistentStates.length) {
+      this.browser.getPersistentStates().then((savedStates) => {
+        if (savedStates !== null) {
+          const store = this.store;
+          this.settings.persistentStates.forEach(({ name, setter }) => {
+            store.commit(setter, savedStates[name]);
+          });
+        }
+      });
+    }
 
     // Start listening for connections
     browser.handleConnection((connection) => {
@@ -94,7 +94,7 @@ class BackgroundScript {
   }
 
   onMessage(connection, message) {
-    if (message.type != '@@STORE_SYNC_MUTATION') {
+    if (!message.type || message.type !== '@@STORE_SYNC_MUTATION') {
       return;
     }
 
