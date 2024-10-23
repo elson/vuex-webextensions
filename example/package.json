@@ -15,7 +15,7 @@
     "watch:dev": "cross-env HMR=true npm run build:dev -- --watch"
   },
   "dependencies": {
-    "vue": "^2.5.13",
+    "vue": "^3.0.0",
     "vuex": "^3.0.1"
   },
   "devDependencies": {
